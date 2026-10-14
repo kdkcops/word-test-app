@@ -9,6 +9,7 @@ android {
     targetSdk 34
     versionCode Integer.parseInt(System.getenv("BUILD_NUM") ?: "1")
     versionName "1." + (System.getenv("BUILD_NUM") ?: "0")
+    ndk { abiFilters "arm64-v8a", "armeabi-v7a" }
   }
   // 서명 키는 저장소에 올리지 않음: GitHub Actions 비밀값(KEYSTORE_B64, KEYSTORE_PASS)에서만 받음
   signingConfigs {
