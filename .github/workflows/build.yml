@@ -9,8 +9,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -29,10 +29,23 @@ jobs:
         env:
           BUILD_NUM: ${{ github.run_number }}
           KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
-        run: gradle :app:assembleRelease --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          gradle :app:assembleRelease --no-daemon --stacktrace 2>&1 | tee "$RUNNER_TEMP/build.log"
       - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cp app/build/outputs/apk/release/app-release.apk WordTest-v${{ github.run_number }}.apk
           gh release create "v${{ github.run_number }}" "WordTest-v${{ github.run_number }}.apk" --title "단어 테스트 v${{ github.run_number }}" --notes "자동 빌드"
+      - name: Save build log on failure
+        if: failure()
+        run: |
+          git config user.name "build-bot"
+          git config user.email "build-bot@users.noreply.github.com"
+          git checkout --orphan ci-log
+          git rm -rq --cached . || true
+          tail -n 300 "$RUNNER_TEMP/build.log" > build-log.txt 2>/dev/null || echo "no build log (failed before build)" > build-log.txt
+          git add build-log.txt
+          git commit -qm "build log ${{ github.run_number }}"
+          git push -f origin ci-log
