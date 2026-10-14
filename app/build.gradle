@@ -1,0 +1,41 @@
+plugins { id 'com.android.application' }
+
+android {
+  namespace 'kr.shabang.wordtest'
+  compileSdk 34
+  defaultConfig {
+    applicationId "kr.shabang.wordtest"
+    minSdk 24
+    targetSdk 34
+    versionCode Integer.parseInt(System.getenv("BUILD_NUM") ?: "1")
+    versionName "1." + (System.getenv("BUILD_NUM") ?: "0")
+  }
+  // 서명 키는 저장소에 올리지 않음: GitHub Actions 비밀값(KEYSTORE_B64, KEYSTORE_PASS)에서만 받음
+  signingConfigs {
+    release {
+      def ks = System.getenv("KEYSTORE_FILE")
+      if (ks) {
+        storeFile file(ks)
+        storePassword System.getenv("KEYSTORE_PASS")
+        keyAlias "wordtest"
+        keyPassword System.getenv("KEYSTORE_PASS")
+      }
+    }
+  }
+  buildTypes {
+    release {
+      minifyEnabled false
+      signingConfig System.getenv("KEYSTORE_FILE") ? signingConfigs.release : signingConfigs.debug
+    }
+  }
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+}
+
+dependencies {
+  implementation 'androidx.activity:activity:1.9.2'
+  implementation 'androidx.core:core:1.13.1'
+  implementation 'com.google.mlkit:text-recognition-korean:16.0.1'
+}
